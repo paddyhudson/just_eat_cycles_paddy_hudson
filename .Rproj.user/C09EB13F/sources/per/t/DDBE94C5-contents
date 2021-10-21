@@ -1,0 +1,168 @@
+---
+title: "Data Wrangling and Download"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(jsonlite)
+library(here)
+library(lubridate)
+library(nasapower)
+```
+
+```{r}
+summer_2019 <- fs::dir_ls(path = here("data/summer_2019/"), regexp = ".json") %>%
+  purrr::map_dfr(fromJSON) %>% 
+  tibble()
+
+summer_2021 <- fs::dir_ls(path = here("data/summer_2021/"), regexp = ".json") %>%
+  purrr::map_dfr(fromJSON) %>% 
+  tibble()
+
+year_2019 <- fs::dir_ls(path = here("data/2019/"), regexp = ".json") %>%
+  purrr::map_dfr(fromJSON) %>% 
+  tibble()
+```
+
+```{r}
+year_2019 <- year_2019 %>%
+  rename(start_id = start_station_id,
+         start_lat = start_station_latitude,
+         start_lon = start_station_longitude,
+         end_id = end_station_id,
+         end_lat = end_station_latitude,
+         end_lon = end_station_longitude,
+  ) %>% 
+  mutate(
+    started_at = as_datetime(started_at),
+    dst_started_at = case_when(
+      between(started_at,
+              as_datetime("2019-03-31 01:00:00.0"),
+              as_datetime("2019-10-27 02:00:00.0")
+      ) ~ started_at + hours(1),
+      TRUE ~ started_at
+    ),
+    week = week(dst_started_at),
+    DOY = yday(dst_started_at),
+    weekday = factor(weekdays(dst_started_at, abbreviate = TRUE),
+                     levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+    hour = hour(dst_started_at),
+    .before = started_at
+  ) %>%
+  mutate(
+    UTC_DOY = yday(started_at),
+    UTC_hour = hour(started_at)
+  ) %>%
+  select(-c(start_station_name,
+            start_station_description,
+            end_station_name,
+            end_station_description,
+            started_at,
+            dst_started_at,
+            ended_at
+  )) %>% 
+  filter(
+    !(duration < 300 & start_id == end_id)
+  )
+```
+```{r}
+summer_2019 <- summer_2019 %>%
+  rename(start_id = start_station_id,
+         start_lat = start_station_latitude,
+         start_lon = start_station_longitude,
+         end_id = end_station_id,
+         end_lat = end_station_latitude,
+         end_lon = end_station_longitude,
+  ) %>% 
+  mutate(
+    started_at = as_datetime(started_at),
+    dst_started_at = case_when(
+      between(started_at,
+              as_datetime("2019-03-31 01:00:00.0"),
+              as_datetime("2019-10-27 02:00:00.0")
+      ) ~ started_at + hours(1),
+      TRUE ~ started_at
+    ),
+    week = week(dst_started_at),
+    DOY = yday(dst_started_at),
+    weekday = factor(weekdays(dst_started_at, abbreviate = TRUE),
+                     levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+    hour = hour(dst_started_at),
+    .before = started_at
+  ) %>%
+  mutate(
+    UTC_DOY = yday(started_at),
+    UTC_hour = hour(started_at)
+  ) %>%
+  select(-c(start_station_name,
+            start_station_description,
+            end_station_name,
+            end_station_description,
+            started_at,
+            dst_started_at,
+            ended_at
+  )) %>% 
+  filter(
+    !(duration < 300 & start_id == end_id)
+  )
+```
+```{r}
+summer_2021 <- summer_2021 %>%
+  rename(start_id = start_station_id,
+         start_lat = start_station_latitude,
+         start_lon = start_station_longitude,
+         end_id = end_station_id,
+         end_lat = end_station_latitude,
+         end_lon = end_station_longitude,
+  ) %>% 
+  mutate(
+    started_at = as_datetime(started_at),
+    dst_started_at = case_when(
+      between(started_at,
+              as_datetime("2019-03-31 01:00:00.0"),
+              as_datetime("2019-10-27 02:00:00.0")
+      ) ~ started_at + hours(1),
+      TRUE ~ started_at
+    ),
+    week = week(dst_started_at),
+    DOY = yday(dst_started_at),
+    weekday = factor(weekdays(dst_started_at, abbreviate = TRUE),
+                     levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+    hour = hour(dst_started_at),
+    .before = started_at
+  ) %>%
+  mutate(
+    UTC_DOY = yday(started_at),
+    UTC_hour = hour(started_at)
+  ) %>%
+  select(-c(start_station_name,
+            start_station_description,
+            end_station_name,
+            end_station_description,
+            started_at,
+            dst_started_at,
+            ended_at
+  )) %>% 
+  filter(
+    !(duration < 300 & start_id == end_id)
+  )
+```
+
+```{r}
+weather_data <- get_power(
+  community = "sb",
+  pars = c("T2M", "WS2M", "PRECTOTCORR", "CLOUD_AMT"),
+  temporal_api = "hourly",
+  lonlat = c(-3.300622, 55.98002),
+  dates = c("2019-01-01", "2019-12-31")
+)
+```
+
+```{r}
+write_csv(summer_2019, "data/summer_2019.csv")
+write_csv(summer_2021, "data/summer_2021_clean.csv")
+write_csv(year_2019, "data/year_2019_clean.csv")
+write_csv(weather_data, "data/weather_data.csv")
+```
+

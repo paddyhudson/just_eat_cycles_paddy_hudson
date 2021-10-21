@@ -1,0 +1,153 @@
+---
+title: "Model Prep"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(stats)
+library(ggfortify)
+library(GGally)
+library(glmulti)
+library(modelr)
+```
+
+```{r}
+year_2019 <- read_csv("data/year_2019_clean.csv")
+weather_data <- read_csv("data/weather_data.csv")
+```
+
+```{r}
+weather_data <- weather_data %>% 
+  select(DOY, HR, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)
+```
+
+
+```{r}
+model_data <- year_2019 %>%
+  group_by(UTC_DOY, UTC_hour) %>% 
+  summarise(
+    total_ride_time = sum(duration),
+    avg_duration = mean(duration),
+    rides = n(),
+    hour = as_factor(median(hour)),
+    weekday = if_else(head(weekday, 1) %in% c("Sat", "Sun"), FALSE, TRUE)
+  ) %>%
+  ungroup() %>% 
+  left_join(
+    weather_data,
+    by = c(UTC_DOY = "DOY", UTC_hour = "HR")
+  )
+```
+```{r}
+time_model_data <- model_data %>% 
+  select(total_ride_time, hour, weekday, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)
+
+duration_model_data <- model_data %>% 
+  select(avg_duration, hour, weekday, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)
+
+rides_model_data <- model_data %>% 
+  select(rides, hour, weekday, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)
+```
+
+```{r}
+time_model <- lm(total_ride_time ~ ., time_model_data)
+duration_model <- lm(avg_duration ~ ., duration_model_data)
+rides_model <- lm(rides ~ hour + weekday + T2M + weekday:hour, rides_model_data)
+```
+
+```{r}
+summary(time_model)
+summary(duration_model)
+summary(rides_model)
+```
+```{r}
+autoplot(time_model)
+autoplot(rides_model)
+```
+```{r}
+rides_model_data %>% 
+  select(-hour) %>% 
+  ggpairs()
+```
+
+```{r}
+glmulti_fit <- glmulti(
+  rides ~ ., 
+  data = rides_model_data,
+  level = 2, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 0, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = FALSE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "g", # the problem is too large for exhaustive search, so search using a genetic algorithm
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 100, # return best 100 solutions
+  fitfunction = lm # fit using the `lm` function
+)
+```
+```{r}
+rides_model_train <- rides_model_data %>% 
+  mutate(key = seq(1:nrow(rides_model_data))) %>% 
+  slice_sample(prop = 0.8, replace = FALSE)
+
+rides_model_test <- rides_model_data %>%
+  mutate(key = seq(1:nrow(rides_model_data))) %>% 
+  anti_join(rides_model_train, by = c("key" = "key")) %>% 
+  select(-key)
+
+rides_model_train <- rides_model_train %>% select(-key)
+```
+
+```{r}
+rides_model_train <- rides_model_train %>% 
+  filter(weekday == TRUE) %>% 
+  filter(between(as.numeric(hour), 8, 20))
+```
+
+
+```{r}
+rides_model <- lm(rides~CLOUD_AMT+hour+T2M+WS2M+PRECTOTCORR+PRECTOTCORR:WS2M+CLOUD_AMT:T2M+hour:T2M, data = rides_model_train)
+```
+
+```{r}
+summary(rides_model)
+```
+
+```{r}
+autoplot(rides_model)
+```
+
+```{r}
+rides_model_test %>%
+  filter(weekday == TRUE) %>% 
+  filter(between(as.numeric(hour), 8, 20)) %>%
+  add_predictions(rides_model) %>% 
+  ggplot() +
+  aes(x = rides, y = pred) +
+  geom_point(alpha = 0.4, colour = "#00B0F6") +
+  labs(
+    x = "Actual Number of Rides",
+    y = "Predicted Number of Rides",
+    title = "Predicting Number of Rides from Time and Weather Data",
+    subtitle = "Weekdays 0800-2100"
+  ) +
+  geom_line(data = tibble(x = 0:100, y = 0:100), aes(x = x, y = y), colour = "red")
+```
+
+```{r}
+year_2019 %>% 
+  group_by(start_id) %>% 
+  summarise(rides = n()) %>% 
+  slice_max(rides, prop = 0.1)
+```
+
+```{r}
+library(relaimpo)
+```
+
+```{r}
+calc.relimp(rides_model, type = "lmg", rela = TRUE)
+```
+

@@ -1,0 +1,165 @@
+---
+title: "Visualisations"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(leaflet)
+library(lubridate)
+```
+```{r}
+year_2019 <- read_csv("data/year_2019_clean.csv")
+weather_data <- read_csv("data/weather_data.csv")
+```
+
+```{r}
+year_2019 %>%
+  filter(duration < 18000) %>%
+  group_by(DOY) %>% 
+  summarise(hours = sum(duration)/3600, rides = n()) %>% 
+  slice_min(hours, n = 10)
+
+days <- year_2019 %>% 
+  group_by(DOY) %>% 
+  slice(n = 1)
+
+top_10 %>% 
+  left_join(days)
+```
+```{r}
+year_2019 %>% 
+  filter(duration < 18000) %>% 
+  group_by(start_id) %>%
+  summarise(tot_hours = sum(duration)/3600, rides = n()) %>%
+  filter(rides > 10) %>% 
+  slice_max(tot_hours, prop = 0.10) %>% 
+  summarise(tot_hours = sum(tot_hours))
+```
+```{r}
+year_2019 %>% 
+  filter(duration < 18000) %>% 
+  summarise(median = median(duration)/60)
+```
+
+```{r}
+year_2019 %>% 
+  filter(duration < 18000) %>%
+  group_by(week) %>%
+  summarise(avg_dur = median(duration)/60, rides = n()) %>% 
+  ggplot() +
+  aes(x = week, y = avg_dur) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  labs(
+    x = "Time of Year (by week)",
+    y = "Median Ride Duration",
+    title = "Median Ride Duration by Time of Year"
+  )
+  
+```
+
+```{r}
+end_stations <- year_2019 %>% 
+  select(end_id, end_lat, end_lon) %>% 
+  distinct(end_id, .keep_all = TRUE)
+
+stations<- year_2019 %>% 
+  select(start_id, start_lat, start_lon) %>% 
+  distinct(start_id, .keep_all = TRUE)
+```
+
+
+```{r}
+my_data <- year_2019 %>% 
+  filter(duration < 18000) %>% 
+  filter(!(weekday %in% c("Sat", "Sun"))) %>% 
+  #filter(between(DOY, 152, 243))
+  filter(DOY < 59 | DOY > 333)
+  
+end <- my_data %>%
+  group_by(start_id) %>%
+  summarise(tot_hours = sum(duration)/3600, rides = n()) %>%
+  filter(rides > 10) %>% 
+  slice_min(rides, n = 10) %>%
+  left_join(start_stations, by = c("start_id" = "start_id"))
+
+my_data %>% 
+  group_by(start_id) %>%
+  summarise(tot_hours = sum(duration)/3600, rides = n()) %>%
+  filter(rides > 10) %>% 
+  slice_max(rides, n = 10) %>% 
+  left_join(start_stations, by = c("start_id" = "start_id")) %>% 
+  leaflet(options = leafletOptions(zoomControl = FALSE)) %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = ~start_lon, lat = ~start_lat) %>% 
+  addCircleMarkers(data = end, lng = ~start_lon, lat = ~start_lat, color = "red", label = ~start_id) %>% 
+  setView(lat = 55.94174, lng = -3.190361, zoom = 12)
+```
+
+```{r}
+year_2019 %>% 
+  filter(duration < 18000) %>% 
+  filter(!(weekday %in% c("Sat", "Sun"))) %>% 
+  group_by(hour) %>% 
+  summarise(rides = n()) %>% 
+  ggplot() +
+  aes(x = hour, y = rides) +
+  geom_col(show.legend = FALSE, fill = "#00B0F6") +
+  labs(
+    x = "Time of Day",
+    y = "Number of Rides Started",
+    title = "Weekday Rides by Time of Day"
+  )
+
+year_2019 %>% 
+  filter(duration < 18000) %>% 
+  mutate(weekend = if_else(weekday %in% c("Sat", "Sun"), "Weekend", "Weekday")) %>% 
+  group_by(weekday) %>% 
+  summarise(rides = n()) %>% 
+  mutate(weekday = factor(weekday, levels = c("Mon","Tue","Wed","Thu", "Fri", "Sat", "Sun" ))) %>% 
+  ggplot() +
+  aes(x = weekday, y = rides) +
+  geom_col(fill = "#00B0F6") +
+  labs(
+    x = "Weekday",
+    y = "Number of Rides",
+    title = "Rides by Day of Week"
+  ) +
+  theme(legend.title=element_blank())
+```
+```{r}
+stations <- start_stations %>% 
+  rename(id = start_id) %>% 
+  left_join(year_2019) %>% 
+  group_by(id, DOY, hour) %>% 
+  summarise(start_rides = n()) %>% 
+  left_join(year_2019, by = c("id" = "end_id", "DOY" = "DOY", "hour" = "hour")) %>% 
+  group_by(id, DOY, hour, start_rides) %>% 
+  summarise(end_rides = n())
+```
+```{r}
+start_stations %>%
+  leaflet(options = leafletOptions(zoomControl = FALSE)) %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = ~start_lon, lat = ~start_lat, clusterOptions = markerClusterOptions()) %>% 
+  setView(lat = 55.94174, lng = -3.190361, zoom = 12)
+  
+```
+```{r}
+my_data <- year_2019 %>% 
+  filter(duration < 18000)# %>% 
+  #filter(!(weekday %in% c("Sat", "Sun"))) %>% 
+  #filter(between(DOY, 152, 243))
+  #filter(DOY < 59 | DOY > 333)
+  
+end <- my_data %>%
+  group_by(start_id) %>%
+  summarise(tot_hours = sum(duration)/3600, rides = n()) %>%
+  filter(rides > 10) %>% 
+  slice_min(rides, n = 10) %>%
+  left_join(start_stations, by = c("start_id" = "start_id"))
+
+end
+```
+

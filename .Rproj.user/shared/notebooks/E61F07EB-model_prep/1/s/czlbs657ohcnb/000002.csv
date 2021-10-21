@@ -1,0 +1,2 @@
+"0","weather_data <- weather_data %>% "
+"0","  select(DOY, HR, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)"

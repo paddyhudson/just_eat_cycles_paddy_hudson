@@ -1,0 +1,3 @@
+"0","time_model <- lm(total_ride_time ~ ., time_model_data)"
+"0","duration_model <- lm(avg_duration ~ ., duration_model_data)"
+"0","rides_model <- lm(rides ~ ., rides_model_data)"

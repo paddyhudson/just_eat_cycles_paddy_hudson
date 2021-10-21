@@ -1,0 +1,8 @@
+"0","time_model_data <- model_data %>% "
+"0","  select(total_ride_time, hour, weekday, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)"
+"0",""
+"0","duration_model_data <- model_data %>% "
+"0","  select(avg_duration, hour, weekday, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)"
+"0",""
+"0","rides_model_data <- model_data %>% "
+"0","  select(rides, hour, weekday, T2M, WS2M, PRECTOTCORR, CLOUD_AMT)"

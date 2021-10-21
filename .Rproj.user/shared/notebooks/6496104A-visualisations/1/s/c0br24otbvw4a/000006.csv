@@ -1,0 +1,14 @@
+"0","stations <- start_stations %>% "
+"0","  rename(id = start_id) %>% "
+"0","  left_join(year_2019) %>% "
+"0","  group_by(id, DOY, hour) %>% "
+"0","  summarise(start_rides = n()) %>% "
+"0","  left_join(year_2019, by = c(""id"" = ""end_id"", ""DOY"" = ""DOY"", ""hour"" = ""hour"")) %>% "
+"0","  group_by(id, DOY, hour, start_rides) %>% "
+"0","  summarise(end_rides = n())"
+"1","Joining, by = c(""start_lat"", ""start_lon"")
+"
+"1","`summarise()` has grouped output by 'id', 'DOY'. You can override using the `.groups` argument.
+"
+"1","`summarise()` has grouped output by 'id', 'DOY', 'hour'. You can override using the `.groups` argument.
+"

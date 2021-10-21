@@ -1,0 +1,3 @@
+"0","rides_model_train <- rides_model_train %>% "
+"0","  filter(weekday == TRUE) %>% "
+"0","  filter(between(as.numeric(hour), 8, 20))"

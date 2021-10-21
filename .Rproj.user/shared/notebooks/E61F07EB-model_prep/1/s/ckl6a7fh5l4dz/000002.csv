@@ -1,0 +1,1 @@
+"0","rides_model <- lm(rides~CLOUD_AMT+hour+T2M+WS2M+PRECTOTCORR+PRECTOTCORR:WS2M+CLOUD_AMT:T2M+hour:T2M, data = rides_model_train)"

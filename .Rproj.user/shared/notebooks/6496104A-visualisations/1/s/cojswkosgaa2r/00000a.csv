@@ -1,0 +1,5 @@
+"0","start_stations %>%"
+"0","  leaflet(options = leafletOptions(zoomControl = FALSE)) %>% "
+"0","  addTiles() %>% "
+"0","  addCircleMarkers(lng = ~start_lon, lat = ~start_lat, clusterOptions = markerClusterOptions()) %>% "
+"0","  setView(lat = 55.94174, lng = -3.190361, zoom = 12)"

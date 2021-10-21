@@ -1,0 +1,39 @@
+"0","year_2019 <- read_csv(""data/year_2019_clean.csv"")"
+"1","
+[36m--[39m [1m[1mColumn specification[1m[22m [36m-----------------------------------------------------------------------[39m
+cols(
+  week = [32mcol_double()[39m,
+  DOY = [32mcol_double()[39m,
+  weekday = [31mcol_character()[39m,
+  hour = [32mcol_double()[39m,
+  duration = [32mcol_double()[39m,
+  start_id = [32mcol_double()[39m,
+  start_lat = [32mcol_double()[39m,
+  start_lon = [32mcol_double()[39m,
+  end_id = [32mcol_double()[39m,
+  end_lat = [32mcol_double()[39m,
+  end_lon = [32mcol_double()[39m,
+  UTC_DOY = [32mcol_double()[39m,
+  UTC_hour = [32mcol_double()[39m
+)
+
+"
+"0","weather_data <- read_csv(""data/weather_data.csv"")"
+"1","
+[36m--[39m [1m[1mColumn specification[1m[22m [36m-----------------------------------------------------------------------[39m
+cols(
+  LON = [32mcol_double()[39m,
+  LAT = [32mcol_double()[39m,
+  YEAR = [32mcol_double()[39m,
+  MM = [32mcol_double()[39m,
+  DD = [32mcol_double()[39m,
+  DOY = [32mcol_double()[39m,
+  YYYYMMDD = [34mcol_date(format = """")[39m,
+  HR = [32mcol_double()[39m,
+  T2M = [32mcol_double()[39m,
+  WS2M = [32mcol_double()[39m,
+  PRECTOTCORR = [32mcol_double()[39m,
+  CLOUD_AMT = [32mcol_double()[39m
+)
+
+"
